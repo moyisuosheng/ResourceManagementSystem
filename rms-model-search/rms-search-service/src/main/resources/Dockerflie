@@ -1,0 +1,5 @@
+FROM java:8
+VOLUME /tmp/rms-search
+MAINTAINER myss
+ADD /target/rms-search-service-1.0-SNAPSHOT.jar  rms-search-server.jar
+ENTRYPOINT ["java","-Dprot=8040","--spring.profiles.active=dev","-jar","/rms-search-server.jar"]

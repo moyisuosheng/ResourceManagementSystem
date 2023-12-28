@@ -1,0 +1,5 @@
+FROM java:8
+VOLUME /tmp/rms-gateway
+MAINTAINER myss
+ADD /target/rms-gateway-1.0-SNAPSHOT.jar  rms-gateway.jar
+ENTRYPOINT ["java","-Dprot=8010","--spring.profiles.active=dev","-jar","/rms-gateway.jar"]

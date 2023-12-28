@@ -1,0 +1,5 @@
+FROM java:8
+VOLUME /tmp/rms-system
+MAINTAINER myss
+ADD /target/rms-system-service-1.0-SNAPSHOT.jar  rms-system-server.jar
+ENTRYPOINT ["java","-Dprot=8020","--spring.profiles.active=dev","-jar","/rms-system-server.jar"]

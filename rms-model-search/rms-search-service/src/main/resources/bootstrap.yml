@@ -1,0 +1,26 @@
+spring:
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER-ADDR:127.0.0.1:8848}
+        namespace: a942ac61-74e6-4207-a496-8ae7120ca7b6
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+      config:
+        server-addr: ${NACOS_SERVER-ADDR:127.0.0.1:8848}
+        namespace: a942ac61-74e6-4207-a496-8ae7120ca7b6
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+        prefix: search
+        file-extension: yaml
+  kafka:
+    bootstrap-servers: 192.168.249.133:9092
+    producer:
+      retries: 10
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: 1
