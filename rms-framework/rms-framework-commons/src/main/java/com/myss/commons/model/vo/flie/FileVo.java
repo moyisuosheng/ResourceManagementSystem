@@ -2,6 +2,7 @@ package com.myss.commons.model.vo.flie;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.Length;
@@ -19,6 +20,7 @@ import java.io.Serializable;
 @Schema(name = "文件信息Vo")
 @Data
 @EqualsAndHashCode
+@AllArgsConstructor
 public class FileVo implements Serializable {
 
     /**
@@ -38,6 +40,7 @@ public class FileVo implements Serializable {
     /**
      * 文件地址
      */
+    @NotBlank(message = "文件地址不可为空", groups = {FileVo.Save.class})
     @NotBlank(message = "[文件地址]不能为空")
     @Size(max = 1024, message = "编码长度不能超过1024")
     @Schema(defaultValue = "文件地址")
@@ -88,4 +91,8 @@ public class FileVo implements Serializable {
     @Length(max = 32, message = "编码长度不能超过32")
     private String createUser;
 
+
+    public interface Save {
+
+    }
 }
