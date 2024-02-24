@@ -7,14 +7,66 @@
 ## redis
 
 ```sh
-
+docker run --restart=always \
+-d \
+-p 6379:6379 \
+--name redis \
+-v /opt/docker/redis/redis.conf:/etc/redis/redis.conf \
+-v /opt/docker/redis/data:/data \
+-d redis:latest redis-server /etc/redis/redis.conf --appendonly yes --requirepass password
 ```
+
+参数解释：
+
+>  `-p 6379:6379`：把容器内的6379端口映射到`宿主机`6379端口
+>
+>  `-v /data/redis/redis.conf:/etc/redis/redis.conf`：把宿主机配置好的redis.conf放到容器内的这个位置中
+>
+>  `-v /data/redis/data:/data`：把redis持久化的数据在宿主机内显示，做数据备份
+>
+> `redis-server /etc/redis/redis.conf`：这个是关键配置，让redis不是无配置启动，而是按照这个redis.conf的配置启动 
+>
+> `--appendonly yes`：redis启动后数据持久化
+>
+> `--requirepass password`：设置密码为 `password`
+
+
 
 ## mysql
 
 ```sh
-
+docker run \
+--name mysql \
+-d \
+-p 3306:3306 \
+-v /opt/docker/mysql/log:/var/log/mysql \
+-v /opt/docker/mysql/data:/var/lib/mysql \
+-v /opt/docker/mysql/conf.d/my.cnf:/etc/mysql/conf.d/my.cnf \
+-e MYSQL_ROOT_PASSWORD=root \
+--restart=always \
+--privileged=true \
+mysql:latest
 ```
+
+参数解释：
+
+>  `--name mysql`：设置容器名称
+>
+>  `-v /opt/docker/mysql/log:/var/log/mysql`：把宿主机配置好的redis.conf放到容器内的这个位置中
+>
+>  `-v /opt/docker/mysql/data:/var/lib/mysql`：把mysql持久化的数据在宿主机内显示，做数据备份
+>
+>  `-v /opt/docker/mysql/conf.d/my.cnf:/etc/mysql/conf.d/my.cnf`：把宿主机配置好的my.cnf放到容器内的这个位置中，mysql8.0之后配置。
+>
+>  `-e MYSQL_ROOT_PASSWORD=root`：设置mysql密码
+>
+>  `--restart=always`：自动启动容器
+>
+>  `--privileged=true`：容器内的root拥有`宿主机`真正的root权限，否则容器内的root权限只是`宿主机`的普通用户。
+>
+>  `mysql:latest`：最新版本mysql
+
+
 
 ## pg
 
