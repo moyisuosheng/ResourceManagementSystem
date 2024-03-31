@@ -18,9 +18,35 @@ spring:
         prefix: search
         file-extension: yaml
   kafka:
-    bootstrap-servers: 192.168.249.133:9092
+    bootstrap-servers: 192.168.137.233:9192
+
+    listener:
+      # 手工ack，调用ack后立刻提交offset
+      ack-mode: manual_immediate
+      # 消费者监听容器的并发数量(线程数)
+      concurrency: 4
+
     producer:
-      retries: 10
+      # 消息重发次数
+      retries: 0
+      # 一个批次可以使用的内存大小
+      batch-size: 16384
+      # 设置生产者内存缓冲区大小
+      buffer-memory: 33554432
+      # 键的序列化方式
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # 值的序列化方式
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: 1
+
+    consumer:
+      # 自动提交的间隔
+      auto-commit-interval: 1S
+      # 该属性指定了消费者在读取一个没有偏移量的分区或者偏移量无效的情况下该作何处理：从头开始读取
+      auto-offset-reset: earliest
+
+      # 是否自动提交偏移量，默认值是true ，为了避免重复数据和数据丢失，可以把它设置为false，然后手动提交偏移量
+      enable-auto-commit: false
+      #
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+

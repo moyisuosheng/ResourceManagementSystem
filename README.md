@@ -129,7 +129,12 @@ volumes:
   kafka_data:
     driver: local
     
+```
 
+执行命令：
+
+```sh
+docker compose up
 ```
 
 ## Logstash:elk
