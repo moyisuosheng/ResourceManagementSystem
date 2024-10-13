@@ -1,4 +1,4 @@
-package com.myss.file.config;
+package com.myss.commons.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -24,36 +24,31 @@ public class RedisConfig {
     @Bean
     public <T> RedisTemplate<String, T> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
 
-        RedisTemplate<String, T> redisTemplate = new RedisTemplate<>();
+        RedisTemplate<String, T> redisTemplate = new RedisTemplate<String, T>();
 
         redisTemplate.setConnectionFactory(redisConnectionFactory);
 
         Jackson2JsonRedisSerializer<T> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
 
+        //将对象序列化
         ObjectMapper objectMapper = new ObjectMapper();
 
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
 
-
-        //objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
-        objectMapper.activateDefaultTyping(
-                LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.WRAPPER_ARRAY);
-
-
+        // json序列化配置
+        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.WRAPPER_ARRAY);
         jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
 
+        //key采用String的序列化方式
         redisTemplate.setKeySerializer(RedisSerializer.string());
-
+        //value的序列化方式采用jackson的方式
         redisTemplate.setValueSerializer(jackson2JsonRedisSerializer);
-
+        //hash的key也采用String 的序列化方式
         redisTemplate.setHashKeySerializer(RedisSerializer.string());
-
+        //hash的value序列化方式采用jackson
         redisTemplate.setHashValueSerializer(jackson2JsonRedisSerializer);
-
         redisTemplate.afterPropertiesSet();
-
         return redisTemplate;
     }
 }
