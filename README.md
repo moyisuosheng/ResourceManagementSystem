@@ -1,6 +1,6 @@
 # 资源管理系统
 
-#  [ResourceManagementSystem]() 
+# [ResourceManagementSystem]()
 
 # 一、Docker容器部署脚本
 
@@ -18,19 +18,17 @@ docker run --restart=always \
 
 参数解释：
 
->  `-p 6379:6379`：把容器内的6379端口映射到`宿主机`6379端口
+> `-p 6379:6379`：把容器内的6379端口映射到`宿主机`6379端口
 >
->  `-v /data/redis/redis.conf:/etc/redis/redis.conf`：把宿主机配置好的redis.conf放到容器内的这个位置中
+> `-v /data/redis/redis.conf:/etc/redis/redis.conf`：把宿主机配置好的redis.conf放到容器内的这个位置中
 >
->  `-v /data/redis/data:/data`：把redis持久化的数据在宿主机内显示，做数据备份
+> `-v /data/redis/data:/data`：把redis持久化的数据在宿主机内显示，做数据备份
 >
-> `redis-server /etc/redis/redis.conf`：这个是关键配置，让redis不是无配置启动，而是按照这个redis.conf的配置启动 
+> `redis-server /etc/redis/redis.conf`：这个是关键配置，让redis不是无配置启动，而是按照这个redis.conf的配置启动
 >
 > `--appendonly yes`：redis启动后数据持久化
 >
 > `--requirepass password`：设置密码为 `password`
-
-
 
 ## mysql
 
@@ -50,23 +48,21 @@ mysql:latest
 
 参数解释：
 
->  `--name mysql`：设置容器名称
+> `--name mysql`：设置容器名称
 >
->  `-v /opt/docker/mysql/log:/var/log/mysql`：把宿主机配置好的redis.conf放到容器内的这个位置中
+> `-v /opt/docker/mysql/log:/var/log/mysql`：把宿主机配置好的redis.conf放到容器内的这个位置中
 >
->  `-v /opt/docker/mysql/data:/var/lib/mysql`：把mysql持久化的数据在宿主机内显示，做数据备份
+> `-v /opt/docker/mysql/data:/var/lib/mysql`：把mysql持久化的数据在宿主机内显示，做数据备份
 >
->  `-v /opt/docker/mysql/conf.d/my.cnf:/etc/mysql/conf.d/my.cnf`：把宿主机配置好的my.cnf放到容器内的这个位置中，mysql8.0之后配置。
+> `-v /opt/docker/mysql/conf.d/my.cnf:/etc/mysql/conf.d/my.cnf`：把宿主机配置好的my.cnf放到容器内的这个位置中，mysql8.0之后配置。
 >
->  `-e MYSQL_ROOT_PASSWORD=root`：设置mysql密码
+> `-e MYSQL_ROOT_PASSWORD=root`：设置mysql密码
 >
->  `--restart=always`：自动启动容器
+> `--restart=always`：自动启动容器
 >
->  `--privileged=true`：容器内的root拥有`宿主机`真正的root权限，否则容器内的root权限只是`宿主机`的普通用户。
+> `--privileged=true`：容器内的root拥有`宿主机`真正的root权限，否则容器内的root权限只是`宿主机`的普通用户。
 >
->  `mysql:latest`：最新版本mysql
-
-
+> `mysql:latest`：最新版本mysql
 
 ## pg
 
@@ -75,8 +71,6 @@ docker pull postgres:11.14
 
 docker run --name pgsql -p 5432:5432 -e POSTGRES_PASSWORD=root -v pgdata:/var/lib/postgresql/data --restart=always -d postgres:11.14
 ```
-
-
 
 ## kafka
 
@@ -145,11 +139,127 @@ docker run -d --restart=always --name elk -p 5602:5601 -p 9201:9200 -p 5044:5044
 
 ## es
 
+创建网络
+
 ```
-docker run -p 9200:9200 \
-  -e "discovery.type=single-node" \
-  docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+docker network create elastic
 ```
+
+查看网络
+
+```
+docker network ls
+```
+
+拉取镜像
+
+```dockerfile
+docker pull docker.elastic.co/elasticsearch/elasticsearch:8.15.2
+```
+
+部署es
+
+```dockerfile
+docker run -d \
+--name es \
+--restart=always \
+--network elastic \
+-v /opt/docker/es/data:/usr/share/elasticsearch/data \
+-v /opt/docker/es/plugins:/usr/share/elasticsearch/plugins \
+-p 9200:9200 \
+-p 9300:9300 \
+-e "discovery.type=single-node" \
+docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+```
+
+问题：
+
+启动失败：
+排查是否已经创建/opt/docker/es文件夹和文件夹权限
+
+获取权限指令：
+
+```sh
+chmod 777 /opt/docker/es/**
+```
+
+例如：
+
+```dockerfile
+docker run -d \
+	--name es \
+    -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
+    -e "discovery.type=single-node" \
+    -v es-data:/usr/share/elasticsearch/data \
+    -v es-plugins:/usr/share/elasticsearch/plugins \
+    --privileged \
+    --network es-net \
+    -p 9200:9200 \
+    -p 9300:9300 \
+elasticsearch:7.12.1
+```
+
+上述 Docker 命令是为了运行 Elasticsearch 容器。下面是对命令的解释：
+
+docker run -d： 这部分表示在后台运行容器。
+
+--name es： 为容器指定一个名字，这里是 “es”。
+
+-e "ES_JAVA_OPTS=-Xms512m -Xmx512m"： 设置 Java 虚拟机的参数，包括初始堆内存大小 (-Xms) 和最大堆内存大小 (-Xmx)，这里都设置为
+512MB。
+
+-e "discovery.type=single-node"： 设置 Elasticsearch 的节点发现机制为单节点，因为在这个配置中只有一个 Elasticsearch 实例。
+
+-v es-data:/usr/share/elasticsearch/data： 将容器内 Elasticsearch 的数据目录挂载到宿主机的名为 “es-data” 的卷上，以便数据持久化。
+
+-v es-plugins:/usr/share/elasticsearch/plugins： 类似上面，将容器内 Elasticsearch 的插件目录挂载到宿主机的名为
+“es-plugins” 的卷上。
+
+--privileged： 赋予容器一些特权，可能会有一些安全风险，需要慎用。
+
+--network es-net： 将容器连接到名为 “es-net” 的网络上，目的是为了与其他容器进行通信。
+
+-p 9200:9200 -p 9300:9300： 将容器内部的端口映射到宿主机上，这里分别是 Elasticsearch 的 HTTP REST API
+端口（9200）和节点间通信的端口（9300）。
+
+elasticsearch:7.12.1： 指定要运行的 Docker 镜像的名称和版本号，这里是 Elasticsearch 7.12.1 版本。
+
+这个命令配置了 ElasticSearch 的运行参数、数据卷、网络等，使其能够在后台运行，并且可以通过指定的端口访问 Elasticsearch 的
+API。
+
+【官网链接】[使用 Docker 安装 Kibana |Kibana
+指南 [8.15\] |弹性的 (elastic.co)](https://www.elastic.co/guide/en/kibana/current/docker.html)
+
+## kabana
+
+加入 es 网络
+
+```dockerfile
+docker run -d \
+--restart=always \
+--name kibana \
+-e ELASTICSEARCH_HOSTS=http://es:9200 \
+--network=elastic \
+-p 5601:5601  \
+docker.elastic.co/kibana/kibana:7.10.0
+```
+
+这 Docker 命令是为了运行 Kibana 容器，它与 Elasticsearch 一同组成了 ELK（Elasticsearch, Logstash,
+Kibana）技术栈的一部分。下面是对命令各个部分的解释：
+
+docker run -d： 在后台运行容器。
+
+--name kibana： 为容器指定一个名字，这里是 “kibana”。
+
+-e ELASTICSEARCH_HOSTS=http://es:9200： 设置 Kibana 运行时连接的 Elasticsearch 节点的地址，这里指定了 Elasticsearch
+服务的地址为 http://es:9200，其中 “es” 是 Elasticsearch 服务的容器名，而不是具体的 IP 地址。这是因为在 --network=es-net
+中指定了容器连接到 “es-net” 网络，容器名会被解析为相应的 IP 地址。
+
+--network=elastic： 将容器连接到名为 “elastic” 的网络上，确保 Kibana 能够与 Elasticsearch 容器进行通信。
+
+-p 5601:5601： 将容器内部的 5601 端口映射到宿主机上，允许通过宿主机的 5601 端口访问 Kibana 的 Web 界面。
+
+docker.elastic.co/kibana/kibana:7.10.0： 指定要运行的 Docker 镜像的名称和版本号，这里是 kibana:7.10.0 版本。
 
 ## sentinel
 
@@ -251,9 +361,8 @@ ENTRYPOINT ["java","-Dprot=8020","-jar","/rms-system-server.jar"]
 
 1.4.1.1、依次点击：`服务`  -> `+`  -> `Docker`  -> `Docker 连接`，打开Docker配置界面；
 
-1.4.1.2、命名docker连接后，选择`TCP套接字`模式，在`引擎API URL`中输入：`http://remoteIp:2375`，`证书文件夹` 可不选，便可连接远程docker服务。
-
-
+1.4.1.2、命名docker连接后，选择`TCP套接字`模式，在`引擎API URL`中输入：`http://remoteIp:2375`，`证书文件夹`
+可不选，便可连接远程docker服务。
 
 # 二、Logstash
 
@@ -411,9 +520,6 @@ output.elasticsearch.index
 	index => "%{[fields][product_type]}-transaction-%{+YYYY-MM-dd}"
 ```
 
-
-
-
 修改前 /etc/logstash/conf.d/02-beats-input.conf 文件内容
 
 ```conf
@@ -438,6 +544,7 @@ docker restart elk
 项目中添加依赖（如果使用log4j2 不需要到此坐标）
 
 ```xml
+
 <dependency>
     <groupId>net.logstash.logback</groupId>
     <artifactId>logstash-logback-encoder</artifactId>
@@ -458,7 +565,7 @@ docker restart elk
             <PatternLayout pattern="[%d{HH:mm:ss:SSS}] [%p] - %l - %m%n"/>
         </console>
         <Socket name="Socket" host="192.168.249.133" port="5044" protocol="TCP">
-            <PatternLayout pattern="%d{yyyy.MM.dd 'at' HH:mm:ss z} %-5level %class{36} %M() @%L - %msg%n" />
+            <PatternLayout pattern="%d{yyyy.MM.dd 'at' HH:mm:ss z} %-5level %class{36} %M() @%L - %msg%n"/>
         </Socket>
     </appenders>
     <!--然后定义logger，只有定义了logger并引入的appender，appender才会生效-->
@@ -475,11 +582,12 @@ docker restart elk
 
 2.4.1 左侧 `菜单栏` -> `Management`
 
-2.4.2  查找 `Index Patterns`
+2.4.2 查找 `Index Patterns`
 
 2.4.3 在搜索栏输入 `*` ,查询所有，再关闭右侧弹出窗，点击`Create index pattern`按钮。
 
-2.4.4 在 `Index pattern` 输入框输入 `log*`，这里和 `log4j2-dev.xml` 文件 -> `Socket`标签 -> `PatternLayout` -> 子标签 -> `pattern`属性相关 `可改`。
+2.4.4 在 `Index pattern` 输入框输入 `log*`，这里和 `log4j2-dev.xml` 文件 -> `Socket`标签 -> `PatternLayout` -> 子标签 ->
+`pattern`属性相关 `可改`。
 
 2.4.5 再点击 左侧 `菜单栏` -> `Discover` 即可看到日志数据。
 
@@ -710,11 +818,7 @@ public class SecurityConfig {
 
 ```
 
-
-
 # 四、security
-
-
 
 # 五、统一日志代理
 
@@ -723,4 +827,3 @@ jackson配置注解，json化值为null的属性
 ```
 @JsonInclude(JsonInclude.Include.ALWAYS)
 ```
-
