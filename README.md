@@ -134,7 +134,7 @@ docker compose up
 ## Logstash:elk
 
 ```sh
-docker run -d --restart=always --name elk -p 5602:5601 -p 9201:9200 -p 5044:5044  sebp/elk:771
+docker run -d --restart=always --name elk -p 5602:5601 -p 9201:9200 -p 5044:5044 dockerproxy.cn/sebp/elk:771
 ```
 
 ## es
