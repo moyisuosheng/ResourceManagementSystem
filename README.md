@@ -4,6 +4,255 @@
 
 # 一、Docker容器部署脚本
 
+## minio
+
+创建文件夹
+
+```sh
+mkdir -p /opt/docker/minio/{data,config}
+```
+
+创建容器
+
+```dockerfile
+docker run -p 9000:9000 -p 9090:9090 \
+     --name minio \
+     -d --restart=always \
+     -e "MINIO_ACCESS_KEY=minioadmin" \
+     -e "MINIO_SECRET_KEY=minioadmin" \
+     -v /opt/docker/minio/data:/data \
+     -v /opt/docker/minio/config:/root/.minio \
+     minio/minio server \
+     /data --console-address ":9090" -address ":9000"
+```
+
+## nacos
+
+### 创建文件夹
+
+```
+mkdir -p /opt/docker/nacos/{data,conf,logs}
+```
+
+### 初始容器
+
+```
+docker run -d --name nacos \
+-p 8848:8848 \
+-p 9848:9848 \
+-p 9555:9555 \
+-e PREFER_HOST_MODE=hostname \
+-e MODE=standalone \
+-d nacos/nacos-server
+```
+
+### 复制配置文件
+
+```
+docker cp nacos:/home/nacos/conf /opt/docker/nacos/
+```
+
+### 删除原有的容器
+
+```
+docker rm -f nacos
+```
+
+### 重新部署
+
+```
+docker run --name nacos \
+--restart=always \
+-e MODE=standalone \
+-v /opt/docker/nacos/conf/application.properties:/home/nacos/conf/application.properties \
+-v /opt/docker/nacos/logs/:/home/nacos/logs \
+-v /opt/docker/nacos/data/:/home/nacos/data \
+-e PREFER_HOST_MODE=hostname \
+-p 8848:8848 \
+-p 9848:9848 \
+-d nacos/nacos-server
+```
+
+补充
+
+```
+-e PREFER_HOST_MODE=hostname \
+--env NACOS_AUTH_ENABLE=true \
+-e NACOS_AUTH_TOKEN=SecretKeyM1Z2WDc4dnVyZkQ3NmZMZjZ3RHRwZnJjNFROdkJOemEK \
+-e NACOS_AUTH_IDENTITY_KEY=mpYGXyu7 \
+-e NACOS_AUTH_IDENTITY_VALUE=mpYGXyu7 \
+```
+
+## Seata
+
+版本：`1.8.0.2`
+
+### 建表语句
+
+```sql
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+
+-- -------------------------------- The script used when storeMode is 'db' --------------------------------
+-- the table to store GlobalSession data
+CREATE TABLE IF NOT EXISTS `global_table`
+(
+    `xid`                       VARCHAR(128) NOT NULL,
+    `transaction_id`            BIGINT,
+    `status`                    TINYINT      NOT NULL,
+    `application_id`            VARCHAR(32),
+    `transaction_service_group` VARCHAR(32),
+    `transaction_name`          VARCHAR(128),
+    `timeout`                   INT,
+    `begin_time`                BIGINT,
+    `application_data`          VARCHAR(2000),
+    `gmt_create`                DATETIME,
+    `gmt_modified`              DATETIME,
+    PRIMARY KEY (`xid`),
+    KEY `idx_status_gmt_modified` (`status` , `gmt_modified`),
+    KEY `idx_transaction_id` (`transaction_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
+-- the table to store BranchSession data
+CREATE TABLE IF NOT EXISTS `branch_table`
+(
+    `branch_id`         BIGINT       NOT NULL,
+    `xid`               VARCHAR(128) NOT NULL,
+    `transaction_id`    BIGINT,
+    `resource_group_id` VARCHAR(32),
+    `resource_id`       VARCHAR(256),
+    `branch_type`       VARCHAR(8),
+    `status`            TINYINT,
+    `client_id`         VARCHAR(64),
+    `application_data`  VARCHAR(2000),
+    `gmt_create`        DATETIME(6),
+    `gmt_modified`      DATETIME(6),
+    PRIMARY KEY (`branch_id`),
+    KEY `idx_xid` (`xid`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
+-- the table to store lock data
+CREATE TABLE IF NOT EXISTS `lock_table`
+(
+    `row_key`        VARCHAR(128) NOT NULL,
+    `xid`            VARCHAR(128),
+    `transaction_id` BIGINT,
+    `branch_id`      BIGINT       NOT NULL,
+    `resource_id`    VARCHAR(256),
+    `table_name`     VARCHAR(32),
+    `pk`             VARCHAR(36),
+    `status`         TINYINT      NOT NULL DEFAULT '0' COMMENT '0:locked ,1:rollbacking',
+    `gmt_create`     DATETIME,
+    `gmt_modified`   DATETIME,
+    PRIMARY KEY (`row_key`),
+    KEY `idx_status` (`status`),
+    KEY `idx_branch_id` (`branch_id`),
+    KEY `idx_xid` (`xid`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `distributed_lock`
+(
+    `lock_key`       CHAR(20) NOT NULL,
+    `lock_value`     VARCHAR(20) NOT NULL,
+    `expire`         BIGINT,
+    primary key (`lock_key`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
+INSERT INTO `distributed_lock` (lock_key, lock_value, expire) VALUES ('AsyncCommitting', ' ', 0);
+INSERT INTO `distributed_lock` (lock_key, lock_value, expire) VALUES ('RetryCommitting', ' ', 0);
+INSERT INTO `distributed_lock` (lock_key, lock_value, expire) VALUES ('RetryRollbacking', ' ', 0);
+INSERT INTO `distributed_lock` (lock_key, lock_value, expire) VALUES ('TxTimeoutCheck', ' ', 0);
+
+
+CREATE TABLE IF NOT EXISTS `vgroup_table`
+(
+    `vGroup`    VARCHAR(255),
+    `namespace` VARCHAR(255),
+    `cluster`   VARCHAR(255),
+  UNIQUE KEY `idx_vgroup_namespace_cluster` (`vGroup`,`namespace`,`cluster`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+```
+
+nacos中配置
+
+​	分组：`SEATA_GROUP`
+
+​	名称：`seataServer.properties`
+
+```
+#Transaction storage configuration, only for the server.
+store.mode=db
+store.lock.mode=db
+store.session.mode=db
+
+#These configurations are required if the `store mode` is `db`.
+store.db.datasource=druid
+store.db.dbType=mysql
+store.db.driverClassName=com.mysql.cj.jdbc.Driver
+store.db.url=jdbc:mysql://172.18.214.163:3306/seata?useUnicode=true&rewriteBatchedStatements=true
+store.db.user=root
+store.db.password=root
+store.db.minConn=5
+store.db.maxConn=30
+store.db.globalTable=global_table
+store.db.branchTable=branch_table
+store.db.distributedLockTable=distributed_lock
+store.db.vgroupTable=vgroup-table
+store.db.queryLimit=100
+store.db.lockTable=lock_table
+store.db.maxWait=5000
+```
+
+### 初始化容器
+
+```
+docker run --name seata \
+-p 8091:8091 \
+-p 7091:7091 \
+-e SEATA_IP=127.0.0.1 \
+-e SEATA_PORT=8091 \
+seataio/seata-server
+```
+
+### 使用自定义配置文件
+
+```
+docker cp seata:/seata-server/resources /opt/docker/seata
+```
+
+### 启动服务
+
+```
+docker run --name seata \
+-p 8091:8091 \
+-p 7091:7091 \
+-e SEATA_IP=172.20.130.126 \
+-e SEATA_PORT=8091 \
+-v /opt/docker/seata/resources:/seata-server/resources  \
+seataio/seata-server
+```
+
+ 注释：-e -e SEATA_IP=172.20.130.126 的ip地址需要是宿主机的ip，不然会连不上nacos
+
 ## redis
 
 ```sh
@@ -98,7 +347,7 @@ services:
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://192.168.249.133:9192
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://172.26.138.194:9192
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
     depends_on:
       - zookeeper
@@ -114,7 +363,7 @@ services:
     environment:
         - KAFKA_CLUSTERS_0_NAME=local
         - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka1:9092
-        - AUTH_TYPE="LOGIN_FORM"
+        - AUTH_TYPE=LOGIN_FORM
         - SPRING_SECURITY_USER_NAME=admin
         - SPRING_SECURITY_USER_PASSWORD=admin
 volumes:
@@ -125,6 +374,18 @@ volumes:
     
 ```
 
+解释
+
+```
+192.168.249.133为本机服务器地址
+```
+
+文件名
+
+```
+docker-compose.yml
+```
+
 执行命令：
 
 ```sh
@@ -133,9 +394,268 @@ docker compose up
 
 ## Logstash:elk
 
+
+
+
+
+
+
+```
+version: '3'
+services:
+  elk:
+    image: sebp/elk
+    container_name: elk
+    restart: always
+    ports:
+      - "5601:5601"
+      - "9200:9200"
+      - "5044:5044"
+    volumes:
+      - /opt/docker/elk/elasticsearch/data:/var/lib/elasticsearch
+      - /opt/docker/elk/logstash/conf.d:/etc/logstash/conf.d
+      - /opt/docker/elk/logstash/config:/opt/logstash/config
+      - /opt/docker/elk/kibana/kibana.yml:/opt/kibana/config/kibana.yml
+    environment:
+      - TZ=Asia/Shanghai
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 1.创建文件夹
+
+```
+mkdir -p /opt/docker/elk/kibana/conf/
+mkdir -p /opt/docker/elk/data
+mkdir -p /opt/docker/elk/logstash/config
+```
+
+
+
 ```sh
 docker run -d --restart=always --name elk -p 5602:5601 -p 9201:9200 -p 5044:5044 dockerproxy.cn/sebp/elk:771
 ```
+
+
+
+```
+docker run -d --restart=always --name elk -p 5602:5601 -p 9201:9200 -p 5044:5044 sebp/elk:771
+```
+
+### 2、进入文件夹
+
+```
+cd /opt/docker/elk
+
+docker cp -a elk:/opt/kibana/config/kibana.yml ./kibana
+
+docker cp -a elk:/opt/logstash/config ./logstash/config
+```
+
+### 3、部署脚本
+
+```
+version: '3'
+services:
+  elk:
+    image: sebp/elk
+    container_name: elk
+    restart: always
+    ports:
+      - "5602:5601"
+      - "9201:9200"
+      - "5044:5044"
+    volumes:
+      - /opt/docker/elk/elasticsearch/data:/var/lib/elasticsearch
+      - /opt/docker/elk/logstash/conf.d:/etc/logstash/conf.d
+      - /opt/docker/elk/logstash/config:/opt/logstash/config
+      - /opt/docker/elk/kibana/kibana.yml:/opt/kibana/config/kibana.yml
+    networks:
+      - elk_net
+    environment:
+      - TZ=Asia/Shanghai
+      
+networks: 
+  elk_net:
+    external: true
+```
+
+2.命令
+
+```
+docker run -d --restart=always --name elk -p 5602:5601 -p 9201:9200 -p 5044:5044 \
+ -v /opt/docker/elk/kibana/conf/kibana.yml:/opt/kibana/config/kibana.yml \
+ -v /opt/docker/elk/data:/var/lib/elasticsearch \
+ -v /opt/docker/elk/logstash/config:/opt/logstash/config \
+ dockerproxy.cn/sebp/elk:771
+```
+
+3.命令解释
+
+```
+-p 5601:5601 映射kibana端口
+-p 9200:9200 映射es端口
+-p 5044:5044 映射logstash端口
+-v /root/data/es/conf/kibana.yml:/opt/kibana/config/kibana.yml 挂载kibana配置文件
+-v /root/data/es/data:/var/lib/elasticsearch 挂载es数据源
+-v /root/data/logstash/config:/opt/logstash/config  挂载logstash配置
+--restart=always  自动启动
+```
+
+
+
+#### 修改系统的vm.max_map_count
+
+基于[elk-docker Prerequisites](https://elk-docker.readthedocs.io/#prerequisites)的说明，需要将系统的vm.max_map_count设置为262144或更多。
+
+1. 修改文件/etc/sysctl.conf
+
+```shell
+sudo vi /etc/sysctl.conf
+```
+
+1. 增加以下属性
+
+```shell
+vm.max_map_count=262144
+```
+
+1. 查看修改结果
+
+```shell
+sysctl -p
+```
+
+### 安装和配置ELK服务
+
+#### 获取sebp/elk的原始配置文件
+
+```shell
+// 在运行容器并且把容器里的配置cp到宿主机当中
+docker run --name elk sebp/elk
+
+docker cp -a elk:/opt/kibana/config/kibana.yml ./kibana
+
+docker cp -a elk:/opt/logstash/config ./logstash/config
+
+//然后删除刚才创建的容器
+docker stop -f elk
+
+docker rm -f elk
+```
+
+#### 编写docker-compose文件
+
+```shell
+version: '3'
+services:
+  elk:
+    image: sebp/elk
+    container_name: elk
+    restart: always
+    ports:
+      - "5601:5601"
+      - "9200:9200"
+      - "5044:5044"
+    volumes:
+      - /opt/docker/elk/elasticsearch/data:/var/lib/elasticsearch
+      - /opt/docker/elk/logstash/conf.d:/etc/logstash/conf.d
+      - /opt/docker/elk/logstash/config:/opt/logstash/config
+      - /opt/docker/elk/kibana/kibana.yml:/opt/kibana/config/kibana.yml
+    networks:
+      - elk_net
+    environment:
+      - TZ=Asia/Shanghai
+      
+networks: 
+  elk_net:
+    external: true
+```
+
+#### 单机版docker-compose文件
+
+```shell
+version: '3'
+services:
+  elk:
+    image: sebp/elk
+    container_name: elk
+    restart: always
+    ports:
+      - "5601:5601"
+      - "9200:9200"
+      - "5044:5044"
+    volumes:
+      - /home/elk/elasticsearch/data:/var/lib/elasticsearch
+      - /home/elk/logstash/conf.d:/etc/logstash/conf.d
+      - /home/elk/logstash/config:/opt/logstash/config
+      - /home/elk/kibana/kibana.yml:/opt/kibana/config/kibana.yml
+    environment:
+      - TZ=Asia/Shanghai
+```
+
+## 配置Logstash
+
+#### 创建配置文件
+
+```shell
+vi ./logstash/conf.d/yourconfigname.conf
+```
+
+#### 根据需求配置文件内容
+
+```shell
+input {
+  beats {
+    port => 5044
+  }
+}
+output {
+  stdout {
+    codec => rubydebug
+  }
+  elasticsearch {
+    hosts => ["http://localhost:9200"]
+    index => "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
+  }
+}
+```
+
+## 汉化kibana
+
+#### 修改配置文件
+
+```shell
+vi ./kibana/kibana.yml
+```
+
+#### 在文件末尾增加如下内容
+
+```shell
+i18n.locale: "zh-CN"
+```
+
+#### 启动ELK
+
+```shell
+docker-compose -f ./docker-compose.yml up -d
+```
+
+启动完成后访问 [http://ip:5601](http://ip:5601/)
 
 ## es
 
