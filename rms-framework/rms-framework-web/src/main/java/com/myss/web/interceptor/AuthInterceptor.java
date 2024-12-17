@@ -6,7 +6,6 @@ import com.myss.commons.constants.Constants;
 import com.myss.commons.model.vo.AuthInfo;
 import com.myss.commons.utils.AuthInfoHolder;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -41,13 +40,15 @@ public class AuthInterceptor implements HandlerInterceptor {
         String json = request.getHeader(Constants.PAYLOAD);
         //添加身份安全校验
         if (StrUtil.isEmpty(json)) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return false; // 返回权限不足
+//            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+//            return false; // 返回权限不足
+        } else {
+            // 2.转为java对象
+            AuthInfo authInfo = objectMapper.readValue(json, AuthInfo.class);
+            // 3.存入threadLocal
+            AuthInfoHolder.setAuthInfo(authInfo);
         }
-        // 2.转为java对象
-        AuthInfo authInfo = objectMapper.readValue(json, AuthInfo.class);
-        // 3.存入threadLocal
-        AuthInfoHolder.setAuthInfo(authInfo);
+
         // 4.放行
         return true;
     }

@@ -59,13 +59,14 @@ public class SecurityConfig {
 
     /**
      * 用户认证服务
-     *
+     * 账号：user；密码：123456
      * @return {@link UserDetailsService}
      */
     @Bean
     public UserDetailsService userDetailsService() {
         //密码加密
         PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
+
         //设置用户
         UserDetails docUser = User.builder()
                 .username("user")
