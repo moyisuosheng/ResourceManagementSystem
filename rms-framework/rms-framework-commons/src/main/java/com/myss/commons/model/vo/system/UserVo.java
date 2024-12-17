@@ -3,7 +3,6 @@ package com.myss.commons.model.vo.system;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -17,12 +16,7 @@ import java.util.Date;
  */
 @Schema(name = "用户信息Vo")
 @Data
-public class UserVo implements Serializable {
-
-    /**
-     * 串口版 UID
-     */
-    private static final long serialVersionUID = 1L;
+public class UserVo {
 
     /**
      * 主键
@@ -88,6 +82,5 @@ public class UserVo implements Serializable {
      * 创建日期
      */
     private Date createDate;
-
 
 }

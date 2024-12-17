@@ -10,7 +10,6 @@ import org.hibernate.validator.constraints.Length;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import java.io.Serializable;
 
 /**
  * 文件信息
@@ -21,7 +20,7 @@ import java.io.Serializable;
 @Data
 @EqualsAndHashCode
 @AllArgsConstructor
-public class FileVo implements Serializable {
+public class FileVo{
 
     /**
      * 主键

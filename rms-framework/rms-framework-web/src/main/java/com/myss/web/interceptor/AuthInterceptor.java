@@ -1,9 +1,12 @@
 package com.myss.web.interceptor;
 
-import com.alibaba.fastjson.JSON;
+import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myss.commons.constants.Constants;
 import com.myss.commons.model.vo.AuthInfo;
 import com.myss.commons.utils.AuthInfoHolder;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -18,8 +21,10 @@ import javax.servlet.http.HttpServletResponse;
  * @date 2023/12/04
  */
 @Component
+@RequiredArgsConstructor
 public class AuthInterceptor implements HandlerInterceptor {
 
+    private final ObjectMapper objectMapper;
 
     /**
      * 取出网关提供的payload
@@ -35,12 +40,12 @@ public class AuthInterceptor implements HandlerInterceptor {
         // 1.取出payload头
         String json = request.getHeader(Constants.PAYLOAD);
         //添加身份安全校验
-//        if (StrUtil.isBlank(json)) {
-//            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-//            return false; // 返回权限不足
-//        }
+        if (StrUtil.isEmpty(json)) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            return false; // 返回权限不足
+        }
         // 2.转为java对象
-        AuthInfo authInfo = JSON.parseObject(json, AuthInfo.class);
+        AuthInfo authInfo = objectMapper.readValue(json, AuthInfo.class);
         // 3.存入threadLocal
         AuthInfoHolder.setAuthInfo(authInfo);
         // 4.放行

@@ -4,8 +4,9 @@
     <property name="projectName">rms-gateway</property>
     <property name="logDir">logs</property>
     <property name="PATTERN">[${projectName}] %date{YYYY-MM-dd HH:mm:ss,SSS} %level [%thread][%file:%line] - %msg%n%throwable</property>
-    <property name="remoteIp">192.168.249.133</property>
     <property name="remotePort">5044</property>
+    <!-- ===== 读取 SprigBoot 参数 ===== -->
+    <property name="remoteIp" value="${spring:remote.ip}"/>
 </properties>
 <Appenders>
     <Console name="Console" target="SYSTEM_OUT">

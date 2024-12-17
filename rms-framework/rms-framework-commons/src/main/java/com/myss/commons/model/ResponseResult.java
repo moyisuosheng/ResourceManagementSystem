@@ -7,8 +7,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
-
 
 /**
  * 通用的结果返回类
@@ -21,9 +19,8 @@ import java.io.Serializable;
 @Tag(name = "通用的结果返回类")
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class ResponseResult<T> implements Serializable {
+public class ResponseResult<T> {
 
-    private static final long serialVersionUID = 958295628567280402L;
     /**
      * 正常返回码 100000
      */
@@ -42,7 +39,6 @@ public class ResponseResult<T> implements Serializable {
 
     public ResponseResult() {
         this.code = ResultCode.SUCCESS.getCode();
-//        this.msg = ResultCode.SUCCESS.getDesc();
     }
 
     public ResponseResult(Integer code, T data) {
@@ -68,7 +64,7 @@ public class ResponseResult<T> implements Serializable {
     }
 
     public static <T> ResponseResult<T> okResult(T data) {
-        return new ResponseResult<T>(ResultCode.SUCCESS, data);
+        return new ResponseResult<>(ResultCode.SUCCESS, data);
     }
 
     public static <T> ResponseResult<T> errorResult(int code, String msg) {

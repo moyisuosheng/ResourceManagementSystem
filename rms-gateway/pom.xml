@@ -22,6 +22,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
             <exclusions>
+                <!--移除 Logback-->
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-logging</artifactId>
@@ -37,6 +38,27 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
+
+        <!-- Log4j SpringBoot |- 解决引入 SpringBoot 配置文件参数问题的依赖-->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-spring-boot</artifactId>
+        </dependency>
+
+        <!--        <dependency>-->
+        <!--            <groupId>com.github.ben-manes.caffeine</groupId>-->
+        <!--            <artifactId>caffeine</artifactId>-->
+        <!--        </dependency>-->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
         </dependency>
 
         <dependency>
@@ -74,18 +96,18 @@
         </dependency>
 
 
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter-web</artifactId>-->
-<!--            &lt;!&ndash; Maven整个生命周期内排除内置容器，排除内置容器导出成war包可以让外部容器运行spring-boot项目&ndash;&gt;-->
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>org.springframework</groupId>-->
-<!--                    <artifactId>spring-webmvc</artifactId>-->
-<!--                </exclusion>-->
-<!--                -->
-<!--            </exclusions>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework.boot</groupId>-->
+        <!--            <artifactId>spring-boot-starter-web</artifactId>-->
+        <!--            &lt;!&ndash; Maven整个生命周期内排除内置容器，排除内置容器导出成war包可以让外部容器运行spring-boot项目&ndash;&gt;-->
+        <!--            <exclusions>-->
+        <!--                <exclusion>-->
+        <!--                    <groupId>org.springframework</groupId>-->
+        <!--                    <artifactId>spring-webmvc</artifactId>-->
+        <!--                </exclusion>-->
+        <!--                -->
+        <!--            </exclusions>-->
+        <!--        </dependency>-->
         <!-- 排除spring-webmvc，如果想要使用web，引入spring-boot-starter-webflux -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

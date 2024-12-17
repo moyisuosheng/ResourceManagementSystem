@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.util.Collection;
 
 /**
@@ -22,7 +21,7 @@ import java.util.Collection;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class PageResponseResult<T extends Collection> extends ResponseResult<T> implements Serializable {
+public class PageResponseResult<T extends Collection<?>> extends ResponseResult<T> {
 
     /**
      * 页码

@@ -21,13 +21,14 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-@Document(indexName = Constants.IndexNames.FILE, shards = 3, replicas = 1)
+@Document(indexName = Constants.IndexNames.FILE)
 public class FileDto {
+
     /**
-     * 编号
+     * 商品唯一标识
      */
     @Id
-    private Long id;//商品唯一标识
+    private Long id;
 
     /**
      * 文件名

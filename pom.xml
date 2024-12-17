@@ -55,6 +55,8 @@
         <freemarker.version>2.3.9.RELEASE</freemarker.version>
         <springdoc-openapi-ui.version>1.7.0</springdoc-openapi-ui.version>
         <spring-cloud-starter-loadbalancer.version>3.1.5</spring-cloud-starter-loadbalancer.version>
+        <jasypt-spring-boot-starter.version>3.0.5</jasypt-spring-boot-starter.version>
+        <caffeine.version>2.9.3</caffeine.version>
     </properties>
 
 
@@ -97,6 +99,12 @@
             <artifactId>hutool-all</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.ulisesbocchio</groupId>
+            <artifactId>jasypt-spring-boot-starter</artifactId>
+            <version>${jasypt-spring-boot-starter.version}</version>
+        </dependency>
+
         <!-- devtools热部署依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -113,19 +121,13 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
-        <!-- fastjson 全局引入 -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-        </dependency>
-
         <!-- 在SpringCloud 2020.0.2版本中把bootstrap的相关依赖从spring-cloud-starter-config中移除了 -->
         <!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-bootstrap -->
         <!--  bootstrap文件配置 全局引入-->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-bootstrap</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.cloud</groupId>-->
+<!--            <artifactId>spring-cloud-starter-bootstrap</artifactId>-->
+<!--        </dependency>-->
 
         <!--        有问题-->
         <!--        <dependency>-->
@@ -178,6 +180,12 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt</artifactId>
                 <version>${jwt.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
             </dependency>
 
             <!-- hutool-->

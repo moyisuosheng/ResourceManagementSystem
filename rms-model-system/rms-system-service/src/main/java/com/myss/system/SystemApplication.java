@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @MapperScan("com.myss.**.mapper") // 指定mapper包扫描范围
 @ComponentScan(basePackages = {"com.myss.system","com.myss.web","com.myss.web.config","com.myss.mybatis"}) // 指定启动类包扫描范围
 @EnableTransactionManagement
-@EnableFeignClients(basePackages = "com.myss.*.api")//指定启动类包扫描范围
+@EnableFeignClients(basePackages = "com.myss.*.api")
 public class SystemApplication {
 
     public static void main(String[] args) {

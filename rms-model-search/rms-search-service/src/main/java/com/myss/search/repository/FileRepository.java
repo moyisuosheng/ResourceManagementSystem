@@ -1,4 +1,4 @@
-package com.myss.search.service;
+package com.myss.search.repository;
 
 import com.myss.search.domain.FileDto;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
@@ -8,12 +8,7 @@ import java.util.List;
 
 /**
  * 文件存储库
- *
- * @author zhurongxu
- * @version 1.0.0
- * @date 2023/12/28
  */
-
 @Repository
 public interface FileRepository extends ElasticsearchRepository<FileDto, Long> {
 
@@ -24,6 +19,5 @@ public interface FileRepository extends ElasticsearchRepository<FileDto, Long> {
      * @return {@link List}<{@link FileDto}>
      */
     List<FileDto> findFileDtoByFileName(String fileName);
-
 
 }

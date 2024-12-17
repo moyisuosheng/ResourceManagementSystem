@@ -1,0 +1,27 @@
+autoDetectedPackages:
+- com.myss.commons.config
+- com.myss.commons.constants
+- com.myss.commons.enums
+- com.myss.commons.model
+- com.myss.commons.utils
+- com.myss.file
+- com.myss.gateway
+- com.myss.generator
+- com.myss.mybatis.config
+- com.myss.mybatis.handler
+- com.myss.search
+- com.myss.system
+- com.myss.web.aspect
+- com.myss.web.config
+- com.myss.web.convert
+- com.myss.web.exception
+- com.myss.web.feign
+- com.myss.web.interceptor
+enableAutoDetect: true
+ignoreSameClassCall: null
+ignoreSamePackageCall: null
+includedPackagePrefixes: null
+includedParentClasses: null
+name: xcodemap-filter
+recordMode: smart
+startOnDebug: false

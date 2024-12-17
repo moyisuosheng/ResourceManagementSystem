@@ -1,4 +1,4 @@
-package com.myss.commons.config;
+package com.myss.gateway.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

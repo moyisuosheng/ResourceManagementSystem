@@ -9,10 +9,16 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -31,13 +37,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/v1/public/file/")
 @Slf4j
+@RequiredArgsConstructor
 public class FileUploadController {
 
-    @Autowired
-    private FileUploadService fileUploadService;
+    private final FileUploadService fileUploadService;
 
-    @Autowired
-    private FileMapper fileMapper;
+    private final FileMapper fileMapper;
 
     /**
      * 计算文件MD5校验并上传
@@ -93,7 +98,7 @@ public class FileUploadController {
      * @throws Exception 例外
      */
     @GetMapping("/verify/ping")
-    public ResponseResult ping() throws Exception {
+    public ResponseResult<String> ping() throws Exception {
 
         return ResponseResult.okResult(fileMapper.ping());
     }

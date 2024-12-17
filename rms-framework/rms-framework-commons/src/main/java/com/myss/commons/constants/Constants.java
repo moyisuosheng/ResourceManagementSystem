@@ -45,7 +45,7 @@ public final class Constants {
         /**
          * 文件索引库
          */
-        public static final String FILE = "video";
+        public static final String FILE = "file";
 
     }
 

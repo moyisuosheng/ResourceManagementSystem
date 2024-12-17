@@ -1,7 +1,6 @@
 package com.myss.search;
 
-
-import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myss.search.domain.FileDto;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -10,7 +9,11 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.elasticsearch.core.*;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHitSupport;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.SearchPage;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -20,11 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author moyis
- * @title: MyIndexTest
- * @projectName ResourceManagementSystem
- * @description: TODO
- * @date 2023/12/1115:18
+ * es测试
  */
 
 @Slf4j
@@ -34,6 +33,10 @@ public class MyIndexTest {
 
     @Autowired
     private ElasticsearchRestTemplate elasticsearchRestTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
 
     @Test
     public void testMatch() throws IOException {
@@ -62,7 +65,7 @@ public class MyIndexTest {
         }
 
         List<FileDto> files = handleResponse(searchHits);
-        log.info(JSON.toJSONString(files));
+        log.info(objectMapper.writeValueAsString(files));
     }
 
     private <T> List<T> handleResponse(SearchPage<T> searchHits) {

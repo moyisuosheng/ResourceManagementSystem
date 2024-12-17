@@ -1,0 +1,36 @@
+remote:
+  ip: 172.18.68.8
+server:
+  port: 8010
+spring:
+  application:
+    # 应用名，必填，用于注册nacos
+    name: rms-gateway
+  config:
+    import:
+      # 因为springboot 2.4版本以后默认关闭加载bootstrap.ymL，所以只能通过此方式连接到nacos config
+      # 监听 DEFAULT_GROUP:test.yml
+      - optional:nacos:gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${remote.ip}:8848
+        namespace: a942ac61-74e6-4207-a496-8ae7120ca7b6
+        group: DEFAULT_GROUP
+        username: nacos
+        password: nacos
+        # 设置为faLse可以只发现其他服务但不注册自身，用于本地代码调试
+        register-enabled: true
+      config:
+        # 配置中心地址
+        server-addr: ${remote.ip}:8848
+        # 所属命名空间d，用于区分开发、测试、验收、生产
+        namespace: a942ac61-74e6-4207-a496-8ae7120ca7b6
+        # 文件分组
+        group: DEFAULT_GROUP
+        username: nacos
+        password: nacos
+        # 启用nacos配置管理
+        enabled: true
+        # 配置文件类型
+        file-extension: yml

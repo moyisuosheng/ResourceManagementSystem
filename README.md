@@ -2,7 +2,510 @@
 
 # [ResourceManagementSystem]()
 
-# 一、Docker容器部署脚本
+# 一、配置文件
+
+## Gateway
+
+```yaml
+remote:
+  ip: 172.18.68.8
+spring:
+  redis:
+    host: ${remote.ip}
+    port: 6379
+    password: password
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${remote.ip}:8858
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]': # 匹配所有请求
+            allowedOrigins: "*" #跨域处理 允许所有的域
+            allowedMethods: # 支持的方法
+              - GET
+              - POST
+              - PUT
+              - DELETE
+      routes:
+        - id: content
+          uri: lb://rms-video-service
+          predicates:
+            - Path=/rms-video/**
+          # 地址前缀
+          # filters:
+          #   - StripPrefix=1
+        - id: system
+          uri: lb://rms-system-service
+          predicates:
+            - Path=/rms-system/**
+          # 地址前缀
+          # filters:
+          #   - StripPrefix=1
+        - id: search
+          uri: lb://rms-search-service
+          predicates:
+            - Path=/rms-search/**
+          # 地址前缀
+          # filters:
+          #   - StripPrefix=1
+# logging:
+#   level:
+#     # com.alibaba.nacos.client.*: WARN
+#     com.alibaba.nacos.client.*: INFO
+
+ribbon:
+  ConnectTimeout: 60000 # 连接超时时间(ms)
+  ReadTimeout: 60000 # 通信超时时间(ms)
+
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMillisecond: 60000 # 熔断超时时长：60000ms
+
+logging:
+  config: classpath:log4j2-dev.xml
+```
+
+## System
+
+```
+remote:
+  ip: 172.18.68.8
+server:
+  servlet:
+    #（可选项）配置项目路径，建议与应用项目名称保持一致
+    context-path: /rms-system
+    encoding:
+      charset: UTF-8
+spring:
+  # main:
+  #   allow-bean-definition-overriding: true  # 因为将来会引入很多依赖, 难免有重名的 bean
+  aop:
+    auto: true
+  jackson:
+    dateFormat: "yyyy-MM-dd HH:mm:ss"
+    timeZone: GMT+8
+    messageDateFormat: "yyyy-MM-dd HH:mm:ss"
+    messageTimeZone: GMT+8
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5000MB
+      max-request-size: 5000MB
+  redis:
+    host: ${remote.ip}
+    port: 6379
+    timeout: 5000
+    password: password
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${remote.ip}:3306/rms-system?userUnicode=true&useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    type: com.alibaba.druid.pool.DruidDataSource
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${remote.ip}:8858
+mybatis-plus:
+  mapperLocations: classpath*:mapper/*.xml,classpath*:mapper/**/*.xml
+  #别名包设置
+  typeAliasesPackage: com.myss.system.mapper.**
+  globalConfig:
+    dbConfig:
+      idType: ASSIGN_ID
+      # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
+      logicDeleteField: deleted
+      # 逻辑已删除值(默认为 1)
+      logicDeleteValue: 1
+      # 逻辑未删除值(默认为 0)
+      logicNotDeleteValue: 0
+  #mybatis-plus配置控制台打印完整带参数SQL语句
+  configuration:
+    #输出sql日志
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+    call-setters-on-nulls: true
+
+swagger:
+  enabled: true
+
+minio:
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucket: rms
+  endpoint:  http://${remote.ip}:9001
+  domain:  http://${remote.ip}:9001
+#minio:
+#  accessKey: awake-dev
+#  secretKey: bPfm2ANQBC7xI81
+#  bucket: awake-private-dev
+#  endpoint:  https://dev-io.crec.cn
+#  domain:  https://dev-io.crec.cn
+
+
+xxl:
+  job:
+    accessToken: default_token
+    admin:
+      addresses: http://${remote.ip}:8080/xxl-job-admin
+    executor:
+      address: ''
+      appName: lowcode-notice
+      ip: ''
+      logPath: log/notice
+      logRetentionDays: 30
+      port: 9998
+      
+seata:
+  enable-auto-data-source-proxy: true
+  enabled: true
+  registry: # TC服务注册中心的配置，微服务根据这些信息去注册中心获取tc服务地址
+    # 参考tc服务自己的registry.conf中的配置
+    type: nacos
+    nacos: # tc
+      server-addr: ${remote.ip}:8848
+      namespace: a942ac61-74e6-4207-a496-8ae7120ca7b6
+      group: SEATA_GROUP
+      # tc服务在nacos中的服务名称
+      application: seata-server
+      cluster: default
+      # 事务组，根据这个获取tc服务的cluster名称
+      username: nacos
+      password: nacos
+  tx-service-group: rms-server
+  service:
+    vgroup-mapping:
+      rms-server: default
+
+
+logging:
+  config: classpath:log4j2-dev.xml
+
+# ======== SpringDoc配置 ========
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    # 持久化认证数据，如果设置为 true，它会保留授权数据并且不会在浏览器关闭/刷新时丢失
+    persistAuthorization: true
+    path: doc.html
+
+# ======== SpringDocs文档配置 ========
+spring-docs:
+  title: 系统服务 API Docs
+  description: 系统服务 + OpenAPI Docs
+  version: 0.0.1
+  scheme: Bearer
+  header: Authorization
+```
+
+## File
+
+```
+remote:
+  ip: 172.18.68.8
+server:
+  port: 8030
+  servlet:
+    #（可选项）配置项目路径，建议与应用项目名称保持一致
+    context-path: /rms-file
+    encoding:
+      charset: UTF-8
+spring:
+  # main:
+  #   allow-bean-definition-overriding: true  # 因为将来会引入很多依赖, 难免有重名的 bean
+  aop:
+    auto: true
+  jackson:
+    dateFormat: "yyyy-MM-dd HH:mm:ss"
+    timeZone: GMT+8
+    messageDateFormat: "yyyy-MM-dd HH:mm:ss"
+    messageTimeZone: GMT+8
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5000MB
+      max-request-size: 5000MB
+  redis:
+    host: ${remote.ip}
+    port: 6379
+    timeout: 5000
+    password: password
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${remote.ip}:3306/rms-file?userUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    type: com.alibaba.druid.pool.DruidDataSource
+  kafka:
+    bootstrap-servers: ${remote.ip}:9192
+    producer:
+      retries: 10
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+
+mybatis-plus:
+  mapperLocations: classpath*:mapper/*.xml,classpath*:mapper/**/*.xml
+
+  #别名包设置
+  typeAliasesPackage: com.myss.file.mapper.**
+  globalConfig:
+    dbConfig:
+      idType: ASSIGN_ID
+      # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
+      logicDeleteField: deleted
+      # 逻辑已删除值(默认为 1)
+      logicDeleteValue: 1
+      # 逻辑未删除值(默认为 0)
+      logicNotDeleteValue: 0
+  configuration:
+    #输出sql日志
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+    call-setters-on-nulls: true
+
+seata:
+  enable-auto-data-source-proxy: true
+  enabled: true
+  registry: # TC服务注册中心的配置，微服务根据这些信息去注册中心获取tc服务地址
+    # 参考tc服务自己的registry.conf中的配置
+    type: nacos
+    nacos: # tc
+      server-addr: ${remote.ip}:8848
+      namespace: a942ac61-74e6-4207-a496-8ae7120ca7b6
+      group: SEATA_GROUP
+      # tc服务在nacos中的服务名称
+      application: seata-server
+      cluster: default
+      # 事务组，根据这个获取tc服务的cluster名称
+      username: nacos
+      password: nacos
+  tx-service-group: rms-server
+  service:
+    vgroup-mapping:
+      rms-server: default
+swagger:
+  enabled: true
+
+minio:
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucket: rms
+  endpoint:  http://${remote.ip}:9001
+  domain:  http://${remote.ip}:9001
+#minio:
+#  accessKey: awake-dev
+#  secretKey: bPfm2ANQBC7xI81
+#  bucket: awake-private-dev
+#  endpoint:  https://dev-io.crec.cn
+#  domain:  https://dev-io.crec.cn
+
+
+xxl:
+  job:
+    accessToken: default_token
+    admin:
+      addresses: http://${remote.ip}:8080/xxl-job-admin
+    executor:
+      address: ''
+      appName: lowcode-notice
+      ip: ''
+      logPath: log/notice
+      logRetentionDays: 30
+      port: 9998
+
+logging:
+  config: classpath:log4j2-dev.xml
+
+# ======== SpringDoc配置 ========
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    # 持久化认证数据，如果设置为 true，它会保留授权数据并且不会在浏览器关闭/刷新时丢失
+    persistAuthorization: true
+    path: doc.html
+
+# ======== SpringDocs文档配置 ========
+spring-docs:
+  title: 文件服务 API Docs
+  description: 文件服务 + OpenAPI Docs
+  version: 0.0.1
+  scheme: Bearer
+  header: Authorization
+```
+
+## Search
+
+```
+remote:
+  ip: 172.18.68.8
+server:
+  servlet:
+    #（可选项）配置项目路径，建议与应用项目名称保持一致
+    context-path: /rms-file
+    encoding:
+      charset: UTF-8
+spring:
+  # main:
+  #   allow-bean-definition-overriding: true  # 因为将来会引入很多依赖, 难免有重名的 bean
+  aop:
+    auto: true
+  jackson:
+    dateFormat: "yyyy-MM-dd HH:mm:ss"
+    timeZone: GMT+8
+    messageDateFormat: "yyyy-MM-dd HH:mm:ss"
+    messageTimeZone: GMT+8
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5000MB
+      max-request-size: 5000MB
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${remote.ip}:3306/rms-search?userUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    type: com.alibaba.druid.pool.DruidDataSource
+  redis:
+    host: ${remote.ip}
+    port: 6379
+    timeout: 5000
+    password: password
+  sentinel:
+    transport:
+      dashboard: ${remote.ip}:8858
+      client-ip: 192.168.249.1
+  elasticsearch:
+    uris: ${remote.ip}:9200
+  kafka:
+    bootstrap-servers: ${remote.ip}:9192
+    listener:
+      # 手工ack，调用ack后立刻提交offset
+      ack-mode: manual_immediate
+      # 消费者监听容器的并发数量(线程数)
+      concurrency: 2
+    producer:
+      # 消息重发次数
+      retries: 0
+      # 一个批次可以使用的内存大小
+      batch-size: 16384
+      # 设置生产者内存缓冲区大小
+      buffer-memory: 33554432
+      # 键的序列化方式
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # 值的序列化方式
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      # 自动提交的间隔
+      auto-commit-interval: 1S
+      # 该属性指定了消费者在读取一个没有偏移量的分区或者偏移量无效的情况下该作何处理：从头开始读取
+      auto-offset-reset: earliest
+      # 是否自动提交偏移量，默认值是true ，为了避免重复数据和数据丢失，可以把它设置为false，然后手动提交偏移量
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+mybatis-plus:
+  mapperLocations: classpath*:mapper/*.xml,classpath*:mapper/**/*.xml
+
+  #别名包设置
+  typeAliasesPackage: com.myss.file.mapper.**
+  globalConfig:
+    dbConfig:
+      idType: ASSIGN_ID
+      # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
+      logicDeleteField: deleted
+      # 逻辑已删除值(默认为 1)
+      logicDeleteValue: 1
+      # 逻辑未删除值(默认为 0)
+      logicNotDeleteValue: 0
+  configuration:
+    #输出sql日志
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+    call-setters-on-nulls: true
+
+swagger:
+  enabled: true
+
+minio:
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucket: rms
+  endpoint: 127.0.0.1:9001
+  domain: 127.0.0.1:9001
+#minio:
+#  accessKey: awake-dev
+#  secretKey: bPfm2ANQBC7xI81
+#  bucket: awake-private-dev
+#  endpoint:  https://dev-io.crec.cn
+#  domain:  https://dev-io.crec.cn
+
+
+xxl:
+  job:
+    accessToken: default_token
+    admin:
+      addresses: http://127.0.0.1:8080/xxl-job-admin
+    executor:
+      address: ''
+      appName: lowcode-notice
+      ip: ''
+      logPath: log/notice
+      logRetentionDays: 30
+      port: 9998
+
+logging:
+  config: classpath:log4j2-dev.xml
+
+seata:
+  enable-auto-data-source-proxy: true
+  enabled: true
+  registry: # TC服务注册中心的配置，微服务根据这些信息去注册中心获取tc服务地址
+    # 参考tc服务自己的registry.conf中的配置
+    type: nacos
+    nacos: # tc
+      server-addr: ${remote.ip}:8848
+      namespace: a942ac61-74e6-4207-a496-8ae7120ca7b6
+      group: SEATA_GROUP
+      # tc服务在nacos中的服务名称
+      application: seata-server
+      cluster: default
+      # 事务组，根据这个获取tc服务的cluster名称
+      username: nacos
+      password: nacos
+  tx-service-group: rms-server
+  service:
+    vgroup-mapping:
+      rms-server: default
+
+# ======== SpringDoc配置 ========
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    # 持久化认证数据，如果设置为 true，它会保留授权数据并且不会在浏览器关闭/刷新时丢失
+    persistAuthorization: true
+    path: doc.html
+
+# ======== SpringDocs文档配置 ========
+spring-docs:
+  title: 文件服务 API Docs
+  description: 文件服务 + OpenAPI Docs
+  version: 0.0.1
+  scheme: Bearer
+  header: Authorization
+```
+
+# 二、Docker容器部署脚本
 
 ## minio
 
@@ -208,7 +711,7 @@ store.session.mode=db
 store.db.datasource=druid
 store.db.dbType=mysql
 store.db.driverClassName=com.mysql.cj.jdbc.Driver
-store.db.url=jdbc:mysql://172.18.214.163:3306/seata?useUnicode=true&rewriteBatchedStatements=true
+store.db.url=jdbc:mysql://mysql:3306/seata?useUnicode=true&rewriteBatchedStatements=true
 store.db.user=root
 store.db.password=root
 store.db.minConn=5
@@ -239,19 +742,120 @@ seataio/seata-server
 docker cp seata:/seata-server/resources /opt/docker/seata
 ```
 
+### 删除初始容器
+
+```
+docker rm -f seata
+```
+
+### 创建网络
+
+```
+docker network create seata_net
+```
+
+### 将nacos、mysql加入网络
+
+```
+docker network connect seata_net nacos
+docker network connect seata_net mysql
+```
+
+### 查看网络内部信息
+
+```
+docker network inspect seata_net
+```
+
 ### 启动服务
+
+#### 使用`Bridge`(有问题)
 
 ```
 docker run --name seata \
+--restart=always \
 -p 8091:8091 \
 -p 7091:7091 \
--e SEATA_IP=172.20.130.126 \
+--net seata_net \
+-e SEATA_IP=172.18.68.8 \
 -e SEATA_PORT=8091 \
 -v /opt/docker/seata/resources:/seata-server/resources  \
-seataio/seata-server
+-d seataio/seata-server
 ```
 
- 注释：-e -e SEATA_IP=172.20.130.126 的ip地址需要是宿主机的ip，不然会连不上nacos
+ 注释：-e -e SEATA_IP=172.20.130.126 的ip地址需要是宿主机的ip，不然会连不上seata
+
+#### 使用本机(外网无法访问)
+
+```
+docker run --name seata \
+--restart=always \
+--net host \
+-e SEATA_IP=172.18.68.8 \
+-e SEATA_PORT=8091 \
+-v /opt/docker/seata/resources:/seata-server/resources  \
+-d seataio/seata-server
+```
+
+### 设置容器自启动
+
+```
+docker update --restart=always seata
+```
+
+### 取消容器自启动
+
+```
+docker update --restart=no seata
+```
+
+### 查看容器日志
+
+```
+docker logs -f seata
+```
+
+### 移除指定的网络
+
+```
+docker network rm default_network
+```
+
+## Sentinel 
+
+默认账号和密码：sentinel
+
+```
+docker run -d --name sentinel -p 8858:8858 bladex/sentinel-dashboard
+```
+
+
+
+```
+docker run -d --name sentinel -p 8858:8858 \
+-e "-Dproject.name=sentinel -Dsentinel.dashboard.auth.username=bsfc -Dsentinel.dashboard.auth.password=bsfc" \
+bladex/sentinel-dashboard
+```
+
+
+
+## mongoDB
+
+### 创建文件夹
+
+```
+mkdir -p /opt/docker/mongodb/data
+```
+
+### 启动服务
+
+```bash
+docker run -d \
+--name mongodb \
+-p 27017:27017 \
+-v /opt/docker/mongodb/data:/data/db \
+mongo
+```
 
 ## redis
 
@@ -787,7 +1391,7 @@ docker.elastic.co/kibana/kibana:7.10.0： 指定要运行的 Docker 镜像的名
 docker run --name sentinel -d -p 8858:8858 bladex/sentinel-dashboard
 ```
 
-# 二、Docker + idea docker插件实现远程部署项目
+# 三、Docker + idea docker插件实现远程部署项目
 
 ## 1.1 idea 安装 Docker 插件，进行简单配置
 
@@ -884,7 +1488,7 @@ ENTRYPOINT ["java","-Dprot=8020","-jar","/rms-system-server.jar"]
 1.4.1.2、命名docker连接后，选择`TCP套接字`模式，在`引擎API URL`中输入：`http://remoteIp:2375`，`证书文件夹`
 可不选，便可连接远程docker服务。
 
-# 二、Logstash
+# 四、Logstash
 
 ## 2.1 安装Logstash
 
@@ -1111,7 +1715,7 @@ docker restart elk
 
 2.4.5 再点击 左侧 `菜单栏` -> `Discover` 即可看到日志数据。
 
-# 三、SpringDoc
+# 五、SpringDoc
 
 1、 [bootstrap.yml](rms-model-system\rms-system-service\src\main\resources\bootstrap.yml) 添加
 
@@ -1338,9 +1942,9 @@ public class SecurityConfig {
 
 ```
 
-# 四、security
+# 六、security
 
-# 五、统一日志代理
+# 七、统一日志代理
 
 jackson配置注解，json化值为null的属性
 
